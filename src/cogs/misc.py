@@ -1,6 +1,6 @@
 import time
-import os
 from discord.ext import commands
+from src.libs.print import Log as log
 from discord_slash import cog_ext, SlashContext
 
 
@@ -8,7 +8,11 @@ class MiscCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @cog_ext.cog_slash(name="ping", description="Get the ping", guild_ids=[int(os.getenv("GUILD_ID"))])
+    @commands.Cog.listener()
+    async def on_ready(self):
+        log.info(f"{self.bot.user} is up and running!")
+
+    @cog_ext.cog_slash(name="ping", description="Get the ping")
     async def ping(self, ctx: SlashContext):
         t1 = time.perf_counter()
         await ctx.author.trigger_typing()
