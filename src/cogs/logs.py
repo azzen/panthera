@@ -27,9 +27,7 @@ class LoggingCog(commands.Cog):
                      value=truncate(message.content, 1023))
         try:
             channel_id = int(mongo_client.get_guild_log_channel(message.guild.id))
-            log.debug(channel_id)
             logs_channel = self.bot.get_channel(channel_id)
-            log.debug(logs_channel)
             await logs_channel.send(embed=em)
         except Exception as e:
             log.error(f"MongoDB query failed: {e}")
@@ -42,8 +40,12 @@ class LoggingCog(commands.Cog):
         em.set_author(name=f"{member.name}#{member.discriminator}", icon_url=member.avatar_url)
         em.set_thumbnail(url=member.avatar_url)
         em.add_field(name="Account creation:", value=f"{member.created_at.strftime('%Y-%m-%d')}")
-        logs_channel = self.bot.get_channel(812246738231754812)
-        await logs_channel.send(embed=em)
+        try:
+            channel_id = int(mongo_client.get_guild_log_channel(member.guild.id))
+            logs_channel = self.bot.get_channel(channel_id)
+            await logs_channel.send(embed=em)
+        except Exception as e:
+            log.error(f"MongoDB query failed: {e}")
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -52,8 +54,12 @@ class LoggingCog(commands.Cog):
                    timestamp=datetime.utcnow())
         em.set_author(name=f"{member.name}#{member.discriminator}", icon_url=member.avatar_url)
         em.set_thumbnail(url=member.avatar_url)
-        logs_channel = self.bot.get_channel(812246738231754812)
-        await logs_channel.send(embed=em)
+        try:
+            channel_id = int(mongo_client.get_guild_log_channel(member.guild.id))
+            logs_channel = self.bot.get_channel(channel_id)
+            await logs_channel.send(embed=em)
+        except Exception as e:
+            log.error(f"MongoDB query failed: {e}")
 
 
 def setup(bot):
