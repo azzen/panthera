@@ -1,6 +1,6 @@
 import time
 from discord.ext import commands
-from src.libs.print import Log as log
+from libs.print import Log as log
 from discord_slash import cog_ext, SlashContext
 
 

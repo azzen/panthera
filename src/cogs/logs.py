@@ -1,7 +1,7 @@
 from discord.ext import commands
 from discord import Embed
-from src.libs.mongo import client as mongo_client
-from src.libs.print import Log as log
+from libs.mongo import client as mongo_client
+from libs.print import Log as log
 from datetime import datetime
 
 

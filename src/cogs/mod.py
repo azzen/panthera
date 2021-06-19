@@ -1,7 +1,7 @@
 from discord.utils import get as discord_get
 from discord.ext import commands
-from src.libs.print import Log as log
-from src.libs.mongo import client as mongo_client
+from libs.print import Log as log
+from libs.mongo import client as mongo_client
 # from discord_slash import cog_ext, SlashContext
 # from discord_slash.utils.manage_commands import create_option
 

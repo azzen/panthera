@@ -1,6 +1,6 @@
 import os
 from pymongo import MongoClient
-from src.libs.print import Log as log
+from libs.print import Log as log
 
 
 class MongoConnector:
