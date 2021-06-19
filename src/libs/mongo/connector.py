@@ -31,6 +31,15 @@ class MongoConnector:
     def get_admin_role(self, guild_id):
         return self.get(guild_id, "admin_role_id")
 
+    def get_roles_to_assign_on_join(self, guild_id):
+        return self.get(guild_id, "member_join_roles_to_assign")
+
+    def add_role_to_assign_on_join(self, guild_id, role_id):
+        pass
+
+    def get_stats_channel_id(self, guild_id):
+        return self.get(guild_id, "stats_channel_id")
+
 
 client = MongoConnector(os.getenv("DB_PASS"), os.getenv("DB_USER"), os.getenv("DB_HOST"),
                         os.getenv("DB_PORT"), os.getenv("DB_AUTHSOURCE"), os.getenv("DB_NAME"))
