@@ -1,5 +1,5 @@
 import os
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 from libs.print import Log as log
 
 
@@ -36,6 +36,19 @@ class MongoConnector:
 
     def add_role_to_assign_on_join(self, guild_id, role_id):
         pass
+
+    def get_music_channel_id(self, guild_id):
+        return self.get(guild_id, "music_channel_id")
+
+    def set_music_channel_id(self, guild_id, channel_id):
+        try:
+            self.client.guilds.update_one({"guild_id": guild_id},
+                                          {"$set": {"music_channel_id": channel_id}},
+                                          upsert=True)
+        except errors.PyMongoError as e:
+            log.error(f"MongoDB Exception: {e}")
+        except Exception as e:
+            log.error(f"Python Exception: {e}")
 
     def get_stats_channel_id(self, guild_id):
         return self.get(guild_id, "stats_channel_id")
