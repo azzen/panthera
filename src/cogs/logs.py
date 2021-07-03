@@ -20,7 +20,7 @@ class LoggingCog(commands.Cog):
         if message.author == self.bot.user:
             return False
         em = Embed(color=0xffee00,
-                   description=f"🗑️ Message deleted by {message.author.mention} in {message.channel.mention}",
+                   description=f"🗑️ Message deleted in {message.channel.mention}",
                    timestamp=datetime.utcnow())
         em.set_author(name=f"{message.author.name}#{message.author.discriminator}", icon_url=message.author.avatar_url)
         em.add_field(name="Message content:",
