@@ -11,7 +11,6 @@ import discord
 import youtube_dl
 from async_timeout import timeout
 from discord.ext import commands
-from libs.mongo import client as mongo_client
 from libs.print import Log as log
 
 youtube_dl.utils.bug_reports_message = lambda: ''
@@ -128,7 +127,6 @@ class YouTubeDLHelper:
                     continue
                 for _ in ['id', 'title']:
                     playlist[video.get('title')] = 'https://www.youtube.com/watch?v=' + video.get('id')
-            log.debug(playlist)
             return playlist, playlist_title
 
 
@@ -176,6 +174,8 @@ class SongQueue(asyncio.Queue):
 
 
 class VoiceState:
+    TIMEOUT_DELAY = 120
+
     def __init__(self, bot: commands.Bot, ctx: commands.Context):
         self.bot = bot
         self._ctx = ctx
@@ -211,7 +211,7 @@ class VoiceState:
             self.next.clear()
             if not self.loop:
                 try:
-                    async with timeout(120):
+                    async with timeout(VoiceState.TIMEOUT_DELAY):
                         self.current = await self.songs.get()
                 except asyncio.TimeoutError:
                     self.bot.loop.create_task(self.stop())
@@ -232,6 +232,7 @@ class VoiceState:
 
     async def stop(self):
         self.songs.clear()
+        self.current = None
         if self.voice:
             await self.voice.disconnect()
             self.voice = None
@@ -269,28 +270,29 @@ class Music(commands.Cog):
 
     @commands.Cog.listener()
     async def on_ready(self):
-        for guild in self.bot.guilds:
-            music_channel_id = mongo_client.get_music_channel_id(guild.id)
-            if music_channel_id and guild.get_channel(int(music_channel_id)):
-                Music.music_channels[guild.id] = guild.get_channel(int(music_channel_id))
         log.info("Initialized music module")
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
+        if member == self.bot.user and before.channel is not None and after.channel is None \
+                and before.channel.guild.id in self.voice_states:
+            del self.voice_states[before.channel.guild.id]
 
     @commands.command(name='join', invoke_without_subcommand=True)
     async def join(self, ctx: commands.Context):
-        if ctx.voice_client and ctx.voice_client.channel == Music.music_channels[ctx.guild.id]:
-            raise commands.CommandError('The bot is already in a voice channel!')
-        destination = Music.music_channels[ctx.guild.id]
+        destination = ctx.author.voice.channel
+        if ctx.voice_state.voice:
+            return await ctx.voice_state.voice.move_to(destination)
         ctx.voice_state.voice = await destination.connect()
-        await ctx.send(f'Connected to {destination.mention}')
 
     @commands.command(name='now', aliases=['current', 'playing'])
     async def now(self, ctx: commands.Context):
-        if not ctx.voice_state.current is None:
+        if ctx.voice_state.current:
             await ctx.send(embed=ctx.voice_state.current.create_embed())
         else:
             await ctx.send('No music playing!')
 
-    @commands.command(name='queue')
+    @commands.command(name='queue', aliases=['q'])
     async def queue(self, ctx: commands.Context, *, page: int = 1):
         if len(ctx.voice_state.songs) == 0:
             return await ctx.send('Queue is empty!')
@@ -341,7 +343,7 @@ class Music(commands.Cog):
             ctx.voice_state.voice.stop()
             await ctx.message.add_reaction('⏹')
 
-    @commands.command(name='play')
+    @commands.command(name='play', aliases=['jouer', 'p'])
     async def play(self, ctx: commands.Context, *, search: str):
         if not ctx.voice_state.voice:
             await ctx.invoke(self.join)
@@ -369,7 +371,7 @@ class Music(commands.Cog):
                     await ctx.voice_state.songs.put(song)
                     await ctx.send(f'Enqueued {source}')
 
-    @commands.command(name='skip')
+    @commands.command(name='skip', aliases=['s', 'suivant', 'jouerlapistesuivante'])
     async def skip(self, ctx: commands.Context):
         if not ctx.voice_state.is_playing:
             return await ctx.send('Not playing any music right now!')
@@ -388,15 +390,23 @@ class Music(commands.Cog):
         else:
             await ctx.send('You have already voted to skip this song!')
 
+    @commands.command(name='forceskip', aliases=['fs'])
+    @commands.has_permissions(manage_guild=True)
+    async def force_skip(self, ctx: commands.Context):
+        if not ctx.voice_state.is_playing:
+            return await ctx.send('Not playing any music right now!')
+        await ctx.message.add_reaction('⏭')
+        ctx.voice_state.skip()
+
     @join.before_invoke
     @play.before_invoke
-    @pause.before_invoke
-    @resume.before_invoke
     async def ensure_voice_state(self, ctx: commands.Context):
-        if not Music.music_channels[ctx.guild.id]:
-            raise commands.CommandError('A music channel must be defined using the command .channel <#channel> to use this interaction.')
-        if ctx.author not in Music.music_channels[ctx.guild.id].members:
-            raise commands.CommandError('You must be in the music channel to use this command.')
+        if not ctx.author.voice or not ctx.author.voice.channel:
+            raise commands.CommandError('You are not connected to any voice channel.')
+
+        if ctx.voice_client:
+            if ctx.voice_client.channel != ctx.author.voice.channel:
+                raise commands.CommandError('Bot is already in a voice channel.')
 
 
 def setup(bot):
