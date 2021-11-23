@@ -1,0 +1,16 @@
+{
+  "token": "<your-token>",
+  "clientId": "<bot-id>",
+  "guilds": ["<guild-id>"],
+  "channels": {
+	"<guild-id>": {
+	  "logs": "<channel-id>"
+	}
+  },
+  "roles": {
+	"<guild-id>": {
+	  "admin": "<role-id>",
+	  "guest": "<role-id>"
+	}
+  }
+}
