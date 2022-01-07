@@ -1,15 +1,17 @@
 const { roles } = require('../config.json')
 
-async function run(member) {
-	const guildId = member.guild.id
-	const role = member.guild.roles.cache.find(r => r.id === roles[guildId]['guest'])
-	if (role) {
-		member.roles.add(role, "Auto add role")
+async function run(oldMember, newMember) {
+	if (oldMember.pending && !newMember.pending) {
+		const guildId = newMember.guild.id
+		const role = newMember.guild.roles.cache.find(r => r.id === roles[guildId]['guest'])
+		if (role) {
+			newMember.roles.add(role, "Auto add role")
+		}
 	}
 }
 
 module.exports = {
-	event: 'guildMemberAdd',
+	event: 'guildMemberUpdate',
 	once: false,
 	run: run
 }
